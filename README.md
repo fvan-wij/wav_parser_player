@@ -16,5 +16,5 @@ Every file format usually requires its own encoding and specialized software.
 
 The canonical WAVE format starts with the RIFF header:
 
-![WAV structure](http://github.com/fvan-wij/wave_player/blob/main/WAVEformat.png);
+![WAV structure](https://github.com/fvan-wij/wave_player/blob/main/WAVEformat.png)
 

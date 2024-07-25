@@ -200,10 +200,14 @@ int main(int argc, char *argv[])
 	}
 
 	MyAudioEngine		engine(*Data);
-    SDL_ResumeAudioStreamDevice(engine.stream);
-	while (SDL_GetAudioStreamAvailable(engine.stream) < (int)engine.wav_data_len)
+	std::string cue;
+	std::cout << "Audio loaded, press enter to play or type 'STOP' to stop" << std::endl;
+	while (cue != "STOP")
 	{
-		SDL_PutAudioStreamData(engine.stream, engine.wav_data, engine.wav_data_len);
+		SDL_ResumeAudioStreamDevice(engine.stream);
+		if (SDL_GetAudioStreamAvailable(engine.stream) < (int)engine.wav_data_len)
+			SDL_PutAudioStreamData(engine.stream, engine.wav_data, engine.wav_data_len);
+		std::cin >> cue;
 	}
 	delete Data;
 	return (0);

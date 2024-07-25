@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <SDL.h>
+#include <cstdint>
 
 const int		FIELD_SIZE_S = 2;
 const int		FIELD_SIZE_L = 4;
@@ -27,6 +29,40 @@ typedef struct s_wav
 	std::vector<std::vector<int32_t>> 	data;
 	
 } t_wav;
+
+
+struct	MyAudioEngine
+{
+	SDL_AudioSpec spec;
+	SDL_AudioStream *stream;
+	Uint8 *wav_data;
+	Uint32 wav_data_len;
+	MyAudioEngine(t_wav& Wav)
+	{
+		spec.freq = Wav.sampleRate;
+		spec.channels = Wav.numChannels;
+		switch (Wav.bitsPerSample)
+		{
+			case 8:
+				spec.format = SDL_AUDIO_S8;
+				break;
+			case 16:
+				spec.format = SDL_AUDIO_S16LE;
+				break;
+			case 32:
+				spec.format = SDL_AUDIO_S32LE;
+				break;
+		}
+		stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
+		if (!stream) {
+			std::cerr << "Couldn't create audio stream!: " << SDL_GetError() << std::endl;
+			exit(1);
+		}
+		wav_data = (Uint8 *)&Wav.data[0];
+		wav_data_len = Wav.subChunk2Size;
+	}
+};
+
 
 t_wav*	parseWaveFile(std::string filePath)
 {
@@ -138,6 +174,11 @@ void	printWaveData(t_wav *Data)
 
 int main(int argc, char *argv[])
 {
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0)
+	{
+		std::cerr << "Could not initialize subsystem: " << SDL_GetError() << std::endl;
+		return 1;
+	}
 	std::string 		filePath;
 	t_wav*				Data;
 
@@ -156,6 +197,13 @@ int main(int argc, char *argv[])
 
 		std::cerr << "Error: " << e.what() << std::endl;
 		return (1);
+	}
+
+	MyAudioEngine		engine(*Data);
+    SDL_ResumeAudioStreamDevice(engine.stream);
+	while (SDL_GetAudioStreamAvailable(engine.stream) < (int)engine.wav_data_len)
+	{
+		SDL_PutAudioStreamData(engine.stream, engine.wav_data, engine.wav_data_len);
 	}
 	delete Data;
 	return (0);

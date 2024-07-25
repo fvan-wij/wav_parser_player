@@ -1,14 +1,17 @@
 NAME		:=	app
 COMPILER	:=	c++
 FLAGS		:= 	-Wall -Wextra -Werror -std=c++11 
+LIBSDL		:=	./lib/SDL
 SRC			:=  main.cpp 		\
 
 SRCDIR 		:= 	./src
 OBJDIR 		:= 	./obj
 OBJ			:= 	$(addprefix $(OBJDIR)/,$(SRC:.cpp=.o))
 SRC			:= 	$(addprefix $(SRCDIR)/,$(SRC))
+HEADERS		:=	-I ./inc -I $(LIBSDL)/include/SDL3
+LIBS		:=	-L$(LIBSDL)/build -lSDL3
 
-EXERCISE	:= $(shell basename $(PWD))
+DIRNAME		:= $(shell basename $(PWD))
 
 ifdef DEBUG
 	FLAGS += -g
@@ -18,20 +21,25 @@ ifdef LEAKS
 	FLAGS += -g -fsanitize=address
 endif
 
-all: $(NAME)
+all: libsdl $(NAME)
 
 run: all
+	LD_LIBRARY_PATH=$(LIBSDL)/build:$$LD_LIBRARY_PATH ./$(NAME)
+	git submodule add https://github.com/libsdl-org/SDL.git lib/SDL
 
 $(NAME): $(OBJ)
-	@$(COMPILER) $^ -o $(NAME)
-	@echo $(Green) $(Bold) C++ $(EXERCISE) compiled ✅ $(Text_Off)
+	@$(COMPILER) $^ $(LIBS) $(HEADERS) -o $(NAME)
+	@echo $(Green) $(Bold) C++ $(DIRNAME) compiled ✅ $(Text_Off)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	@mkdir -p $(@D) 
-	@$(COMPILER) $(FLAGS) -c $< -o $@
+	@$(COMPILER) $(FLAGS) $(HEADERS) -c $< -o $@
 
 $(OBJDIR):
 	@mkdir $@
+
+libsdl:
+	@cmake $(LIBSDL) -B $(LIBSDL)/build && cmake --build $(LIBSDL)/build && cmake --install $(LIBSDL)/build
 
 clean:
 	@rm -rf $(OBJDIR)
@@ -39,6 +47,7 @@ clean:
 
 fclean:	clean
 	@rm -f $(NAME) 
+	@rm -rf $(LIBSDL)/build
 	@echo $(Yellow) Cleaned executable! $(Text_Off)
 
 re:	fclean all
